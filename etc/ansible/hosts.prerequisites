@@ -1,0 +1,15 @@
+[nfs]
+bastion
+
+[lb]
+loadbalancer
+
+[nodes]
+# master nodes
+master[1:3]
+
+# infra nodes
+infra[1:2]         
+
+# app nodes
+app[1:3]

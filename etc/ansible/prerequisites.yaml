@@ -1,0 +1,72 @@
+---
+# Prerequisites the this prerequisites playbook:
+# - The system is registered with "subscription-manager register"
+# - The variable "pool" have to be filled with the pool ID of the subscription that all the hosts should use
+# - There is an unused device called /dev/xvdb that is attached to the host
+ 
+- hosts: nodes
+  vars:
+    pool: < Pool ID of the subscription to use > 
+    docker_device: /dev/xvdb
+  become: yes
+
+  tasks:
+  - name: attach subscription
+    command: "subscription-manager attach --pool {{ pool }}"
+    ignore_errors: true
+
+  - name: disable all repos
+    command: "subscription-manager repos --disable '*'"
+    ignore_errors: true
+
+  - name: enable only needed repos
+    command: "subscription-manager repos --enable='rhel-7-server-rpms' --enable='rhel-7-server-extras-rpms' --enable='rhel-7-server-ose-3.3-rpms'"
+    ignore_errors: true
+
+  - name: perform yum update
+    yum:
+      name: '*'
+      state: latest
+      update_cache: yes
+
+  - name: install required packages
+    yum:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - vim
+      - ntp
+      - wget
+      - git
+      - net-tools
+      - bind-utils
+      - iptables-services
+      - bridge-utils
+      - bash-completion
+      - nfs-utils
+      - rpcbind
+      - docker-1.10.3
+ 
+  - name: enable ntpd
+    service: name=ntpd state=started enabled=yes
+
+  - name: generate docker-storage-setup config
+    template: src=files/etc/sysconfig/docker-storage-setup.j2 dest=/etc/sysconfig/docker-storage-setup
+
+  - name: setup hosts file
+    template: src=files/etc/hosts.j2 dest=/etc/hosts
+
+  - name: fix docker options
+    command: "sed -i '/OPTIONS=.*/c\\OPTIONS=\"--selinux-enabled --insecure-registry 172.30.0.0/16\"' /etc/sysconfig/docker"
+
+  - name: run docker-storage-setup
+    command: "docker-storage-setup"
+
+  - name: restart and enable docker
+    service: name=docker state=restarted enabled=yes
+
+  - name: start iptables
+    service: name=iptables state=started enabled=yes
+
+  - name: set nfs sebool
+    command: "setsebool -P virt_use_nfs 1"
