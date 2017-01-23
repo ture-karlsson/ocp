@@ -20,7 +20,7 @@
     ignore_errors: true
 
   - name: enable only needed repos
-    command: "subscription-manager repos --enable='rhel-7-server-rpms' --enable='rhel-7-server-extras-rpms' --enable='rhel-7-server-ose-3.3-rpms'"
+    command: "subscription-manager repos --enable='rhel-7-server-rpms' --enable='rhel-7-server-extras-rpms' --enable='rhel-7-server-ose-3.4-rpms'"
     ignore_errors: true
 
   - name: perform yum update
@@ -45,7 +45,7 @@
       - bash-completion
       - nfs-utils
       - rpcbind
-      - docker-1.10.3
+      - docker
  
   - name: enable ntpd
     service: name=ntpd state=started enabled=yes
